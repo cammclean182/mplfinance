@@ -115,6 +115,9 @@ def _valid_plot_kwargs():
  
         'savefig'     : { 'Default'     : None, 
                           'Validator'   : lambda value: isinstance(value,dict) or isinstance(value,str) or isinstance(value, io.BytesIO) },
+
+        'datetime_format': { 'Default'  : None, 
+                          'Validator'   : lambda value: _bypass_kwarg_validation(value)  },
  
         'block'       : { 'Default'     : True, 
                           'Validator'   : lambda value: isinstance(value,bool) },
@@ -214,18 +217,22 @@ def plot( data, **kwargs ):
 
     avg_days_between_points = (dates[-1] - dates[0]) / float(len(dates))
 
-    # avgerage of 3 or more data points per day we will call intraday data:
-    if avg_days_between_points < 0.33:  # intraday
-        if mdates.num2date(dates[-1]).date() != mdates.num2date(dates[0]).date():
-            # intraday data for more than one day:
-            fmtstring = '%b %d, %H:%M'
-        else:  # intraday data for a single day
-            fmtstring = '%H:%M'
-    else:  # 'daily' data (or could be weekly, etc.)
-        if mdates.num2date(dates[-1]).date().year != mdates.num2date(dates[0]).date().year:
-           fmtstring = '%Y-%b-%d'
-        else:
-           fmtstring = '%b %d'
+    datetime_format = config['datetime_format']
+    if datetime_format is not None:
+        fmtstring = datetime_format
+    else:
+        # average of 3 or more data points per day we will call intraday data:
+        if avg_days_between_points < 0.33:  # intraday
+            if mdates.num2date(dates[-1]).date() != mdates.num2date(dates[0]).date():
+                # intraday data for more than one day:
+                fmtstring = '%b %d, %H:%M'
+            else:  # intraday data for a single day
+                fmtstring = '%H:%M'
+        else:  # 'daily' data (or could be weekly, etc.)
+            if mdates.num2date(dates[-1]).date().year != mdates.num2date(dates[0]).date().year:
+                fmtstring = '%Y-%b-%d'
+            else:
+                fmtstring = '%b %d'
 
     if config['show_nontrading']:
         formatter = mdates.DateFormatter(fmtstring)
